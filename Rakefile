@@ -37,16 +37,16 @@ spec = Gem::Specification.new do |s|
   s.author       = "Mason Browne"
   s.email        = "mason.browne@gmail.com"
   s.homepage     = "http://heypanda.com"
-  s.summary      = "Bricklayer. RESTful API client builder for developers on the go."
+  s.summary      = "Bricklayer. RESTful API client builder for Ruby developers on the go."
   s.bindir       = "bin"
   s.description  = s.summary
   s.executables  = []
   s.require_path = "lib"
-  s.files        = %w( LICENSE README Rakefile TODO ) + Dir["{docs,bin,spec,lib,examples,script}/**/*"]
+  s.files        = %w( LICENSE README Rakefile ) + Dir["{docs,bin,spec,lib,examples,script}/**/*"]
  
   # rdoc
   s.has_rdoc         = true
-  s.extra_rdoc_files = %w( README LICENSE TODO )
+  s.extra_rdoc_files = %w( README LICENSE )
   #s.rdoc_options     += RDOC_OPTS + ["--exclude", "^(app|uploads)"]
  
   # Dependencies

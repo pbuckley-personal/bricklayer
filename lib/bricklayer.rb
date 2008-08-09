@@ -162,7 +162,7 @@ module Bricklayer
         processed_service_url.gsub!("{#{k}}") do
           usable_call_params.delete(k)
           # URI encode these, since they're going in the uri directly
-          URI.encode(v)
+          urlencode(v)
         end
       end
       [processed_service_url, usable_call_params, self.request_method, self.wants, block || self.response_callback]
@@ -175,6 +175,10 @@ module Bricklayer
       ret = {}
       stack.each {|hash| ret.merge!(hash)}
       ret
+    end
+    
+    def urlencode(str)
+      str.gsub(/[^a-zA-Z0-9_\.\-]/n) {|s| sprintf('%%%02x', s[0]) }
     end
     
   end
