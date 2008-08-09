@@ -1,3 +1,5 @@
+# Bwaha... stole much of this from the Merb Rakefile
+
 require "rake"
 require "rake/clean"
 require "rake/gempackagetask"
@@ -26,9 +28,6 @@ windows = (PLATFORM =~ /win32|cygwin/) rescue nil
  
 SUDO = windows ? "" : "sudo"
  
-#desc "Packages up Merb."
-#task :default => :package
- 
 task :bricklayer => [:clean, :rdoc, :package]
  
 spec = Gem::Specification.new do |s|
@@ -51,8 +50,7 @@ spec = Gem::Specification.new do |s|
   #s.rdoc_options     += RDOC_OPTS + ["--exclude", "^(app|uploads)"]
  
   # Dependencies
-  s.add_dependency "json"
-
+  
   # Requirements
   #s.requirements << "install the json gem to get faster json parsing"
   s.required_ruby_version = ">= 1.8.4"
@@ -66,9 +64,6 @@ desc "Run :package and install the resulting .gem"
 task :install => :package do
   sh %{#{SUDO} gem install --local pkg/#{NAME}-#{Bricklayer::VERSION}.gem --no-rdoc --no-ri}
 end
-
-
-
 
 def setup_specs(name, spec_cmd='spec', run_opts = "-c -f s")
   desc "Run all specs (#{name})"
