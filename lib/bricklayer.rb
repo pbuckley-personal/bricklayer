@@ -30,7 +30,8 @@ module Bricklayer
         @@state[@@last_child]
       end
       
-      def service_url url, opts = {}
+      def service_url url, opts = {}, &response_callback
+        opts[:response_callback] = response_callback
         state[:last_service_url] = [url, opts]
       end
       
@@ -44,7 +45,7 @@ module Bricklayer
           :override_parameter_stack => [(opts.delete(:override_parameters) || {}), (lsu[1][:override_parameters] || {})],
           :request_method => (opts.delete(:request_method) || lsu[1][:request_method] || :get),
           :wants => (opts.delete(:wants) || lsu[1][:wants] || :body),
-          :response_callback => response_callback,
+          :response_callback => (lsu[1][:response_callback] || response_callback),
           :required_parameters => (opts.delete(:required_parameters) || [])
         }
         state[:remote_methods][method_name] = RemoteMethod.new(rem_meth_params)
