@@ -90,9 +90,9 @@ module Bricklayer
         case res
         when Net::HTTPSuccess #, Net::HTTPRedirection
           if response_callback
-            if wants == :body
+            if wants_back == :body
               return response_callback.call(res.body)
-            elsif wants == :object
+            elsif wants_back == :object
               return response_callback.call(res)
             end
           else
@@ -133,7 +133,7 @@ module Bricklayer
       :override_parameter_stack, :service_url, 
       :request_method, :response_callback, :wants, :required_parameters
     
-    def initialize(opts = {}, &response_callback)
+    def initialize(opts = {})
       opts = {:wants => :body, :default_parameter_stack => [], 
         :override_parameter_stack => {}, :request_method => :get,
         :required_parameters => []}.merge(opts)
