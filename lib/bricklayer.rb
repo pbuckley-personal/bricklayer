@@ -59,6 +59,11 @@ module Bricklayer
     end
     
     
+    def authenticate(u,p)
+      @creds = [u, p]
+    end
+    
+    
     private
     def call_remote(method, args, &block)
       current_method = state[:remote_methods][method]
@@ -107,10 +112,6 @@ module Bricklayer
     
     def state
       @@state[self.class]
-    end
-    
-    def authenticate(u,p)
-      @auth = [u, p]
     end
     
     def self.flatten(params)
