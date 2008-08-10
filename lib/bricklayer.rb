@@ -59,11 +59,13 @@ module Bricklayer
       end
     end
     
+    def remote_methods
+      state[:remote_methods].keys.collect{|m| m.to_s}
+    end
     
     def authenticate(u,p)
       @creds = [u, p]
     end
-    
     
     private
     def call_remote(method, args, &block)
@@ -127,7 +129,6 @@ module Bricklayer
     
     
   end
-  
   
   class RemoteMethod
     attr_accessor :method_name, :default_parameter_stack, 
