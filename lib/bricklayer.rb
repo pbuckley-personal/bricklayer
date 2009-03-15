@@ -49,13 +49,14 @@ module Bricklayer
           :request_method => (opts.delete(:request_method) || lsu[1][:request_method] || :get),
           :wants => (opts.delete(:wants) || lsu[1][:wants] || :body),
           :response_callback => (lsu[1][:response_callback] || response_callback),
-          :required_parameters => (opts.delete(:required_parameters) || [])
+          :required_parameters => (opts.delete(:required_parameters) || []),
+          :data_post_transformer => opts[:direct_data_post]
         }
         state[:remote_methods][method_name] = RemoteMethod.new(rem_meth_params)
-        
+        direct_data_post = opts[:direct_data_post]
         self.class_eval <<-EOM
-          def #{method_name}(args = {}, &block)
-            call_remote(:#{method_name}, args, &block)
+          def #{method_name}(#{direct_data_post ? "ddp, ": ""}args = {}, &block)
+            call_remote(:#{method_name}, #{direct_data_post ? "ddp" : "nil"}, args, &block)
           end
         EOM
 
@@ -71,15 +72,15 @@ module Bricklayer
     end
     
     private
-    def call_remote(method, args, &block)
+    def call_remote(method, direct_data_post, args, &block)
       current_method = state[:remote_methods][method]
-      call_url, headers, params, request_method, wants_back, response_callback = current_method.calling(args, &block)
+      call_url, headers, data_post_transformer, params, request_method, wants_back, response_callback = current_method.calling(args, &block)
       
       method = request_method.to_s.capitalize
       new_headers = {}
       headers.each {|k, v| new_headers[k.to_s] = v.respond_to?(:call) ? v.call : v}
       url = URI.parse(call_url)
-      req = Net::HTTP.const_get(method).new(url.path, new_headers)
+      req = Net::HTTP.const_get(method).new(url.path + "?#{url.query}", new_headers)
       
       
       # Set basic auth if provded
@@ -89,11 +90,17 @@ module Bricklayer
       end
       
       # set our form data
-      req.set_form_data(self.class.flatten(params))
-
+      unless direct_data_post
+        req.set_form_data(self.class.flatten(params))
+      end
+      
+      if data_post_transformer.respond_to? :call
+        direct_data_post = data_post_transformer.call(direct_data_post)
+      end
+      
       # make the call
       begin
-        res = Net::HTTP.new(url.host, url.port).start {|http| http.request(req) }
+        res = Net::HTTP.new(url.host, url.port).start {|http| http.request(req, direct_data_post) }
         case res
         when Net::HTTPSuccess #, Net::HTTPRedirection
           if response_callback
@@ -137,7 +144,7 @@ module Bricklayer
   class RemoteMethod
     attr_accessor :method_name, :default_parameter_stack, 
       :override_parameter_stack, :service_url, 
-      :request_method, :response_callback, :wants, :required_parameters, :header_stack
+      :request_method, :response_callback, :wants, :required_parameters, :header_stack, :data_post_transformer
     
     def initialize(opts = {})
       opts = {:wants => :body, :default_parameter_stack => [], 
@@ -172,7 +179,7 @@ module Bricklayer
           urlencode(v)
         end
       end
-      [processed_service_url, headers, usable_call_params, self.request_method, self.wants, block || self.response_callback]
+      [processed_service_url, headers, data_post_transformer, usable_call_params, self.request_method, self.wants, block || self.response_callback]
       # call_url, params, request_method, response_callback
     end
 
