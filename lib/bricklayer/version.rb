@@ -1,5 +1,5 @@
 module Bricklayer
-  VERSION = '0.1' unless defined?(Bricklayer::VERSION)
+  VERSION = '0.1.1' unless defined?(Bricklayer::VERSION)
  
   # Merb::RELEASE meanings:
   # 'dev'   : unreleased
