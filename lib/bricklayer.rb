@@ -1,3 +1,6 @@
+require 'uri'
+require 'net/http'
+
 unless Hash.method_defined?(:stringify_keys!)
   class Hash
     def stringify_keys!
@@ -8,7 +11,6 @@ unless Hash.method_defined?(:stringify_keys!)
     end
   end
 end
-
 module Bricklayer
   class Base
     class << self
@@ -41,6 +43,7 @@ module Bricklayer
         rem_meth_params = {
           :method_name => method_name,
           :service_url => lsu[0],
+          :header_stack => [(lsu[1][:header_stack] || {}), (opts.delete(:headers) || {})],
           :default_parameter_stack => [(lsu[1][:default_parameters] || {}), (opts.delete(:default_parameters) || {})],
           :override_parameter_stack => [(opts.delete(:override_parameters) || {}), (lsu[1][:override_parameters] || {})],
           :request_method => (opts.delete(:request_method) || lsu[1][:request_method] || :get),
@@ -70,12 +73,13 @@ module Bricklayer
     private
     def call_remote(method, args, &block)
       current_method = state[:remote_methods][method]
-      call_url, params, request_method, wants_back, response_callback = current_method.calling(args, &block)
+      call_url, headers, params, request_method, wants_back, response_callback = current_method.calling(args, &block)
       
       method = request_method.to_s.capitalize
-      
+      new_headers = {}
+      headers.each {|k, v| new_headers[k.to_s] = v.respond_to?(:call) ? v.call : v}
       url = URI.parse(call_url)
-      req = Net::HTTP.const_get(method).new(url.path)
+      req = Net::HTTP.const_get(method).new(url.path, new_headers)
       
       
       # Set basic auth if provded
@@ -133,12 +137,12 @@ module Bricklayer
   class RemoteMethod
     attr_accessor :method_name, :default_parameter_stack, 
       :override_parameter_stack, :service_url, 
-      :request_method, :response_callback, :wants, :required_parameters
+      :request_method, :response_callback, :wants, :required_parameters, :header_stack
     
     def initialize(opts = {})
       opts = {:wants => :body, :default_parameter_stack => [], 
         :override_parameter_stack => {}, :request_method => :get,
-        :required_parameters => []}.merge(opts)
+        :required_parameters => [], :header_stack => {}}.merge(opts)
         
       opts.each do |k,v|
         self.send("#{k}=", v)
@@ -149,6 +153,7 @@ module Bricklayer
     def calling(arguments = {}, &block)
 
       total_params = priority_merge(self.default_parameter_stack + [arguments] + self.override_parameter_stack)
+      headers = priority_merge(self.header_stack)
       missing_params = self.required_parameters - total_params.keys
 
       
@@ -167,7 +172,7 @@ module Bricklayer
           urlencode(v)
         end
       end
-      [processed_service_url, usable_call_params, self.request_method, self.wants, block || self.response_callback]
+      [processed_service_url, headers, usable_call_params, self.request_method, self.wants, block || self.response_callback]
       # call_url, params, request_method, response_callback
     end
 
