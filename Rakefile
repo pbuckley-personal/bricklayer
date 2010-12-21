@@ -5,7 +5,7 @@ require "rake/clean"
 require "rake/gempackagetask"
 require "rake/rdoctask"
 require "rake/testtask"
-require "spec/rake/spectask"
+require "rspec/core/rake_task"
 require "fileutils"
  
 def __DIR__
